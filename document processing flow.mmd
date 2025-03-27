@@ -1,0 +1,14 @@
+graph TD
+    A[React App: Upload File] --> B{NodeJS App Server: Receive File};
+    B --> C[Database: Insert into document_queue];
+    C --> D[NodeJS App Server: Add to Processing Queue];
+    D --> E{OnPrem Node App: Available?};
+    E -- Yes --> F[NodeJS App Server: Trigger OnPrem Processing from Queue];
+    E -- No --> F[NodeJS App Server: Process from Queue];
+    F --> G{For each document in queue};
+    G -- Yes --> H[FastAPI App api/process-document/: Process Document];
+    H --> I[Database: Save Embeddings and Summary];
+    I --> J[NodeJS App Server: Ack];
+    J --> G;
+    G -- No --> K[NodeJS App Server: Clear document_queue];
+    K --> L[React App: Processing Complete];

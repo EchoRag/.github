@@ -1,0 +1,29 @@
+sequenceDiagram
+    title Document Processing
+    participant ReactApp
+    participant NodeJSApp (Server)
+    participant OnPremNodeApp
+    participant FastAPIApp (api/process-document/)
+    participant Database
+
+    ReactApp->>NodeJSApp (Server): Upload File
+    NodeJSApp (Server)->>Database: Insert into document_queue
+    Database-->>NodeJSApp (Server): Ack
+    NodeJSApp (Server)->>NodeJSApp (Server): Add to Processing Queue
+
+    alt OnPremNodeApp is available
+        NodeJSApp (Server)->>OnPremNodeApp: Trigger Processing from Queue
+    else OnPremNodeApp is down
+        NodeJSApp (Server)->>NodeJSApp (Server): Process from Queue
+    end
+
+    loop For each document in queue
+        NodeJSApp (Server)->>FastAPIApp (api/process-document/): Process Document
+        FastAPIApp (api/process-document/)->>Database: Save Embeddings and Summary
+        Database-->>FastAPIApp (api/process-document/): Ack
+        FastAPIApp (api/process-document/)-->>NodeJSApp (Server): Ack
+    end
+
+    NodeJSApp (Server)->>Database: Clear document_queue
+    Database-->>NodeJSApp (Server): Ack
+    NodeJSApp (Server)->>ReactApp: Processing Complete

@@ -1,0 +1,137 @@
+erDiagram
+    users {
+        int user_id PK
+        varchar username UNIQUE
+        varchar email UNIQUE
+        varchar password_hash
+        timestamp created_at
+    }
+
+    projects {
+        int project_id PK
+        int user_id FK
+        varchar project_name
+        text description
+        timestamp created_at
+    }
+
+    documents {
+        int document_id PK
+        int project_id FK
+        varchar document_name
+        varchar file_path
+        varchar file_type
+        timestamp upload_date
+        jsonb metadata
+    }
+
+    calls {
+        int call_id PK
+        int project_id FK
+        varchar call_name
+        varchar transcript_path
+        varchar recording_path
+        timestamp call_date
+        jsonb metadata
+    }
+
+    action_items {
+        int action_item_id PK
+        int call_id FK
+        int document_id FK
+        text action_text
+        int assigned_to FK
+        timestamp due_date
+        varchar status
+        timestamp created_at
+    }
+
+    embeddings {
+        int embedding_id PK
+        int document_id FK
+        int call_id FK
+        vector embedding
+    }
+
+    embedding_queue {
+        int queue_id PK
+        int document_id FK
+        int call_id FK
+        varchar status
+        timestamp created_at
+        timestamp updated_at
+        varchar job_type
+        text error_message
+    }
+
+    fine_tuning_datasets {
+        int dataset_id PK
+        int project_id FK
+        varchar dataset_name
+        varchar dataset_path
+        varchar data_format
+        timestamp created_at
+        jsonb metadata
+    }
+
+    fine_tuning_runs {
+        int run_id PK
+        int dataset_id FK
+        varchar model_name
+        varchar run_name
+        timestamp start_time
+        timestamp end_time
+        varchar status
+        jsonb hyperparameters
+        jsonb metrics
+        varchar checkpoint_path
+        text error_message
+    }
+
+    fine_tuned_models {
+        int model_id PK
+        int run_id FK
+        varchar model_name
+        varchar model_path
+        timestamp created_at
+        jsonb metadata
+    }
+
+    conversations {
+        int conversation_id PK
+        int project_id FK
+        int user_id FK
+        varchar conversation_name
+        timestamp start_time
+        timestamp end_time
+        jsonb metadata
+        text llm_context
+    }
+
+    messages {
+        int message_id PK
+        int conversation_id FK
+        int sender_id FK
+        text message_text
+        timestamp timestamp
+        jsonb metadata
+        vector message_embedding
+    }
+
+    users ||--o{ projects : "creates"
+    projects ||--o{ documents : "contains"
+    projects ||--o{ calls : "contains"
+    calls ||--o{ action_items : "generates"
+    documents ||--o{ action_items : "references"
+    users ||--o{ action_items : "assigned to"
+    documents ||--o{ embeddings : "has"
+    calls ||--o{ embeddings : "has"
+    documents ||--o{ embedding_queue : "queued"
+    calls ||--o{ embedding_queue : "queued"
+    projects ||--o{ fine_tuning_datasets : "contains"
+    fine_tuning_datasets ||--o{ fine_tuning_runs : "used in"
+    fine_tuning_runs ||--o{ fine_tuned_models : "produces"
+    projects ||--o{ conversations : "has"
+    users ||--o{ conversations : "starts"
+    conversations ||--o{ messages : "contains"
+    users ||--o{ messages : "sends"
